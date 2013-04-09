@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+   <head>
+		<title>Startup Weekend Twitter Getter</title>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta http-equiv="content-language" content="en" />
+		<link type="text/css" rel="stylesheet" href="css/960/min/960.css" />
+		<link type="text/css" rel="stylesheet" href="css/960/min/960_16_col.css" />
+		<link type="text/css" rel="stylesheet" href="css/normalize/min/normalize.css" />
+		<link href="tweet/jquery.tweet.css" media="all" rel="stylesheet" type="text/css"/>
+
+		<link type="text/css" rel="stylesheet" href="css/style.css" />
+		<script type="text/javascript" src="js/modernizr-2.0.6/modernizr.min.js"></script>		
+    </head>
+    <body>
+		<header class="dark">
+			<div class="container_16">
+				<h1><img id="twitter-icon" src="images/twitter-bird.png" height="25px"><a class="startup-weekend" href="http://startupweekend.org/" target="_blank">Startup Weekend</a> Twitter Getter</h1>
+			</div>
+		</header>
+		<div class="container_16">
+			<article class="grid_11">
+				<div id="instruction">
+					<p>Click on any <a href="http://startupweekend.org/" target="_blank">Startup Weekend </a>Event on the map and find its recent tweets!</p>
+					<!--<p>The map can filter events by year, making it easy to find recent <a href="http://startupweekend.org/" target="_blank">Startup Weekends</a> near you.</p> -->
+				</div>
+				<div class="item rounded dark">
+					<div id="map_canvas" class="map rounded"></div>
+				</div>
+				<div id="radios" class="item gradient rounded shadow" style="margin:5px;padding:5px 5px 5px 10px;"><strong>Year</strong></div>
+				<div id="credits">
+					<p>This site was created by <strong>April Johnson</strong> for the Startup Weekend Google IO Challenge.</p>
+					<p>Find me on GitHub: <a href='https://github.com/aj34' target="_blank">github.com/aj34 </a></p>
+				</div>
+			</article>
+			<article class="grid_5">
+				<div class='find_sw_tweets'><p>Find tweets for: <a onClick='javascript:findTweets()'href="#"><strong>#startupweekend</strong></a><p></div>
+				<a href="https://twitter.com/StartupWeekend" class="twitter-follow-button" data-show-count="false">Follow @StartupWeekend</a>
+					<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>			
+				<hr class="divider"/>
+				<div id='twitter_title'></div>
+				<div id='tweets' class="tweet"></div>
+			</article>
+		</div>
+		
+		<script type="text/javascript" src="js/jquery-1.7.1/jquery.min.js"></script>
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?&sensor=true"></script>
+		<script type="text/javascript" src="js/demo.js"></script>
+		<script type="text/javascript" src="ui/jquery.ui.map.js"></script>
+		<script type="text/javascript" src="ui/jquery.ui.map.extensions.js"></script>
+		<script type="text/javascript" src="js/date.format.js"></script>
+		<script language="javascript" src="tweet/jquery.tweet.js" type="text/javascript"></script>	
+		
+		<script type="text/javascript">
+				
+		function findTweets() {			
+			$("#tweets").css("display", "block");
+			$("#twitter_title").html("<p>Tweets for: <strong><a href='http://twitter.com/search/realtime?q=%23startupweekend&src=typd' target='_blank'>#startupWeekend</a></strong></p>");
+			$("#tweets").tweet({
+			  username: "aprilsLuckkitty",
+			  avatar_size: 48,
+			  count: 10,
+			  query: '#startupweekend',
+			}).bind("empty", function() {$("#twitter_title").html("<p>No recent tweets for: <strong><a href='http://twitter.com/search/realtime?q=%23startupweekend&src=typd' target='_blank'>#startupWeekend</a></strong></p>"); });
+		}
+				
+		$(function() { 
+			demo.add(function() {			
+				$('#map_canvas').gmap({'disableDefaultUI':true, 'zoom':4, 'center': '38,-97'}).bind('init', function(evt, map) { 
+					$('#map_canvas').gmap('addControl', 'radios', google.maps.ControlPosition.RIGHT_TOP);
+					var images = ['images/map_icons/drops/white.png', 'images/map_icons/drops/blue.png', 'images/map_icons/drops/pink.png', 'images/map_icons/drops/green.png'];
+
+
+					var tags = ['2010 white', '2011 blue', '2012 pink', '2013 green'];
+					$.each(tags, function(i, tag) {
+						$('#radios').append(('<label style="margin-right:5px;display:block;"><input type="checkbox" style="margin-right:3px" value="{0}"/>{1}</label>').format(tag, tag));
+					});
+					
+					$.getJSON( 'events.json', function(data) { 
+						$.each( data.events, function(i, event) {
+							var temp = [];
+							var marker_icon = "images/map_icons/drops/white.png";
+							
+							if (event.start_date != null) {
+								var event_date = new Date(event.start_date);
+								var year = event_date.getFullYear();
+								if (year < 2011) {
+									temp.push(tags[0]);
+									marker_icon = images[0];
+								} else if (year < 2012) {
+									temp.push(tags[1]);
+									marker_icon = images[1];
+								} else if (year < 2013) {
+									temp.push(tags[2]);
+									marker_icon = images[2];
+								} else if (year < 2014) {
+									temp.push(tags[3]);
+									marker_icon = images[3];
+								}
+							}
+							
+							$('#map_canvas').gmap('addMarker', { 'icon': marker_icon, 'tags':temp, 'bound':false, 'position': new google.maps.LatLng(event.location.lat, event.location.lng) } ).click(function() {
+								var street_view_image_sm = 'http://maps.googleapis.com/maps/api/streetview?size=100x100&location=' + event.location.lat +', '+event.location.lng +'&fov=90&heading=235&pitch=10&sensor=false';
+								
+								var eventDetails = '';
+								eventDetails += '<div class="infowindow">';
+								eventDetails += '<img class="street-view-pic" src="' + street_view_image_sm +'"></img><br/>' 	                						
+								if (event.twitter_hashtag != null) {
+									eventDetails += '<strong>Twitter: </strong><a href="http://twitter.com/search/realtime?q=' + encodeURIComponent(event.twitter_hashtag) + '&src=typd" target="_blank">' + event.twitter_hashtag + '</a><br/>';}
+								if (event.start_date != null) {
+									eventDetails += '<strong>Date: </strong>' +new Date(event.start_date).format("mmmm dS, yyyy") +'<br/>';}
+								if (event.facilitators != null && event.facilitators.length === 1 && event.facilitators[0].first_name != null && event.facilitators[0].last_name != null) {
+									eventDetails += '<strong>Contact: </strong>' + event.facilitators[0].first_name + ' ' + event.facilitators[0].last_name +'<br/>';}                							                						
+								if (event.city != null && event.state != null && event.country != null) {
+									eventDetails +=  '<strong>Location: </strong>' + event.city +', '+ event.state + '  ' + event.country +'<br/>';}
+								else if (event.city != null && event.country != null) {
+									eventDetails +=  '<strong>Location: </strong>' + event.city + ', ' + event.country +'<br/>';}
+								else if (event.city != null) { 
+									eventDetails +=  '<strong>Location: </strong>' + event.city + '<br/>';}
+								if (event.website != null) {
+									eventDetails += '<a target="_blank" href="http://'+event.website+'">'+event.website+'</a><br/>';}                							
+								eventDetails += '</div>';
+
+								var latlng = new google.maps.LatLng(event.location.lat, event.location.lng);
+															
+								if (event.twitter_hashtag != null) {									
+									$("#tweets").css("display", "block");
+									$("#twitter_title").html("<p>Tweets for: <strong><a href='http://twitter.com/search/realtime?q=" + encodeURIComponent(event.twitter_hashtag) + "&src=typd' target='_blank'>" + event.twitter_hashtag + "</a></strong></p>"); 
+									
+									$("#tweets").tweet({
+									  username: "aprilsLuckkitty",
+									  avatar_size: 48,
+									  count: 10,
+									  query: event.twitter_hashtag,
+									}).bind("empty", function() {										
+										$("#twitter_title").html("<p>No recent tweets for: <strong><a href='http://twitter.com/search/realtime?q=" + encodeURIComponent(event.twitter_hashtag) + "&src=typd' target='_blank'>" + event.twitter_hashtag + "</a></strong></p>");});
+								} else {
+									$("#twitter_title").html("<p>This event did not have a twitter hashtag.</p>");
+									$("#tweets").css("display", "none");
+								}
+								$('#map_canvas').gmap('openInfoWindow', { 'content': eventDetails }, this);
+							});														
+						});
+					});
+			
+					$('input:checkbox').click(function() {
+						$('#map_canvas').gmap('closeInfoWindow');
+						var filters = [];
+						$('input:checkbox:checked').each(function(i, checkbox) {
+							filters.push($(checkbox).val());
+						});
+						if ( filters.length > 0 ) {
+							$('#map_canvas').gmap('find', 'markers', { 'property': 'tags', 'value': filters, 'operator': 'OR' }, function(marker, found) {
+								marker.setVisible(found); 
+							});
+						} else {
+							$.each($('#map_canvas').gmap('get', 'markers'), function(i, marker) {
+								marker.setVisible(true); 
+							});
+						}
+					});
+				});
+				
+				findTweets();
+			}).load();
+		});
+		
+		
+//		$('#map_canvas').gmap('addMarker', { 'icon': marker_icon, 'tags':temp, 'bound':false, 'position': new google.maps.LatLng(event.location.lat, event.location.lng)}), function(map, marker){ 
+//      $('#map_canvas').gmap('addInfoWindow', {'position': marker.getPosition(), content: 'you rock'}, function(iw) { 
+//      $(marker).click(function() { iw.open(map, marker); map.panTo(marker.getPosition()); }); 
+//      }); 
+//      }; 
+
+
+
+        </script>
+	</body>
+</html>
